@@ -1,28 +1,19 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
 author: "CMI"
-date: "`r Sys.Date()`"
+date: "2020-12-31"
 output:
   html_document:
      keep_md: TRUE
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache=TRUE, message=FALSE)
 
-#install pacman to check for required packages
-if (!require('pacman')) install.packages('pacman'); library(pacman) 
-
-# load (install if required) packages from CRAN
-p_load("dplyr", "lattice", "lubridate", "tidyverse", "data.table", "xtable")
-
-```
 
 
 
 ## Loading and preprocessing the data
-```{r Loading and preprocessing the data}
 
+```r
 #Directory is Reproducible Research
 #Check if a data folder exists, and if not, Create one
 
@@ -34,23 +25,37 @@ if(!file.exists("data")){
 zipfile <- "./activity.zip"
 unzip(zipfile, exdir = "./data", unzip = "internal")
 list.files("./data")
+```
 
+```
+## [1] "activity.csv"
+```
+
+```r
 # Load .csv into R
 activity <- read.csv("./data/activity.csv", header = TRUE)
 
 #Check structure of data
 str(activity)
+```
 
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : chr  "2012-10-01" "2012-10-01" "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+```r
 #Covert date variable to date format
 activity$date <- as.POSIXct(activity$date, format="%Y-%m-%d")
-
 ```
 
 
 
 ## What is mean total number of steps taken per day?
-```{r Total, Mean and Median Steps Per Day}
 
+```r
 #Calculate total, mean total and median steps per day 
 activity_na.rm <- activity %>% 
     ungroup %>% 
@@ -72,23 +77,21 @@ day_n <- c(1:length(dates))
 
 #Divide total steps over all days by number of days to get mean total
 total_mean_step <- round(total_step / max(day_n),0)
-
-
-
 ```
 
-The total number of steps taken over all days recorded is per day is `r format(total_step, scientific=FALSE)`. The mean number of steps per day is `r format(activity_m$mean_step, scientific=FALSE)` and the median number of steps per day is `r format(activity_m$median_step, scientific=FALSE)`.
+The total number of steps taken over all days recorded is per day is 570608. The mean number of steps per day is 10766 and the median number of steps per day is 10765.
 
 The histogram below shows the total number of steps per day.
-```{r Mean Steps per Day Histogram}
 
+```r
 step_hist <- ggplot(data = activity_na.rm, aes(step_day, na.rm=TRUE)) 
     step_hist + geom_histogram() + 
     labs(title = "Histogram: Total Number of Steps Per Day",
          x = "Total steps per day",
          y = "Frequency")   
-
 ```
+
+![](PA1_template_files/figure-html/Mean Steps per Day Histogram-1.png)<!-- -->
 
 
 
@@ -97,8 +100,8 @@ step_hist <- ggplot(data = activity_na.rm, aes(step_day, na.rm=TRUE))
 
 The average daily step pattern is shown in the graph below. This is calculated by matching the five minute intervals for each of the days recorded and calculating the mean number of steps for each interval. This shows that the highest number of steps typically occurs around the 10,000th interval each day. 
 
-```{r Daily Activity Pattern}
 
+```r
 #Calculate mean steps per interval across days
 activity_interval <- activity %>% 
     group_by(interval) %>% 
@@ -108,22 +111,22 @@ plot(int_mean ~ interval, data=activity_interval,
      type = "l", 
      xlab = "Five minute interval",
      ylab = "Mean number of steps")
-
 ```
+
+![](PA1_template_files/figure-html/Daily Activity Pattern-1.png)<!-- -->
 In the previous calculations, missing values were removed. This limits the amount of information used for analysis and can introduce bias in results. Another analytic approach is to impute the missing values and assess whether this impacts overall results. This approach is explored below. 
 
 ## Imputing missing values
 
-```{r Count missing values}
 
+```r
 #Count missing values in steps variable
 missing <- sum(is.na(activity$steps))
-
 ```
-The total number of missing values for the 'steps' variable is `r format(missing, scientific=FALSE)`.
+The total number of missing values for the 'steps' variable is 2304.
 
-```{r Impute missing values using mean value for each interval}
 
+```r
 activity_na.rp <- activity %>% 
     group_by(interval) %>% 
     mutate(int_mean = mean(steps, na.rm= TRUE),
@@ -145,15 +148,14 @@ median_step_na.rp <- max(activity_na.rp$med_step, na.rm=TRUE)
 
 #Extract mean
 mean_step_na.rp <- max(activity_na.rp$mean_step, na.rm=TRUE)
-
 ```
 
-When missing values are imputed using the mean from each daily interval, the total number of steps for the full reporting period increases from `r format(total_step, scientific=FALSE)` to `r format(total_step_na.rp, scientific=FALSE)`. This is an increase of `r format(total_step_na.rp - total_step, scientific=FALSE)` steps, if missing values are replaced with mean values. 
+When missing values are imputed using the mean from each daily interval, the total number of steps for the full reporting period increases from 570608 to 656737.5. This is an increase of 86129.51 steps, if missing values are replaced with mean values. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-```{r Identify days of the week}
 
+```r
 activity_wk <- activity_na.rp %>%
     mutate(day = weekdays(as.Date(date)), 
            wkday = ifelse(day == "Monday" |
@@ -172,11 +174,13 @@ step_wk <- ggplot(data = activity_wk, aes(interval, wkday_int_mean))
     labs(title = "Mean Steps Per Inverval for Weekdays and Weekends",
          x = "Interval",
          y = "Mean number of steps")      
+```
 
+![](PA1_template_files/figure-html/Identify days of the week-1.png)<!-- -->
 
+```r
 activity_wk_max <- activity_wk %>% 
     group_by(wkday) %>% 
     summarise(step_max = max(wkday_int_mean))
-
 ```
-The above graphs show the average daily activity routine for weekdays and weekends. The plots indicate that activity starts later on weekends, as compared to weekends. Furthermore, on weekdays, the highest mean number of steps per interval `r max(activity_wk_max$step_max)`, whereas on weekends, the highest mean number of steps is `r min(activity_wk_max$step_max).
+The above graphs show the average daily activity routine for weekdays and weekends. The plots indicate that activity starts later on weekends, as compared to weekends. Furthermore, on weekdays, the highest mean number of steps per interval 230, whereas on weekends, the highest mean number of steps is `r min(activity_wk_max$step_max).
